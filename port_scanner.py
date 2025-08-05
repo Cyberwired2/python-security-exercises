@@ -6,7 +6,7 @@ def is_valid_ip(ip):
     if len(parts) != 4:
         return False
     for part in parts:
-        if not part.isdigit() or (len(part) > 1 and part[0] == '0'):
+        if not part.isdigit() or (len(part) > 3 and part[0] == '0'):
             return False
         if not 0 <= int(part) <= 255:
             return False

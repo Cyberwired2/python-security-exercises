@@ -1,69 +1,52 @@
 import socket
 from datetime import datetime
 
-def is_valid_ip(ip):
-    parts = ip.split('.')
-    if len(parts) != 4:
-        return False
-    for part in parts:
-        if not part.isdigit() or (len(part) > 1 and part[0] == '0'):
-            return False
-        if not 0 <= int(part) <= 255:
-            return False
-    return True
+def get_valid_input(prompt, input_type=int, min_val=0, max_val=65535):
+    """Safely get and validate user input"""
+    while True:
+        try:
+            value = input_type(input(prompt))
+            if min_val <= value <= max_val:
+                return value
+            print(f"Error: Must be between {min_val}-{max_val}")
+        except ValueError:
+            print("Invalid input. Please enter a number")
 
-def port_scan(target, start_port, end_port):
+def scan_port(ip, port, timeout=1):
+    """Check if a single port is open"""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(timeout)
+            return s.connect_ex((ip, port)) == 0
+    except:
+        return False
+
+def main():
+    print("\n" + "="*50)
+    print("=== INTERACTIVE PORT RANGE SCANNER ===")
+    print("="*50 + "\n")
+    
+    # Get user inputs
+    target = input("Enter target IP: ").strip()
+    start_port = get_valid_input("Start port (0-65535): ")
+    end_port = get_valid_input(f"End port ({start_port}-65535): ", min_val=start_port)
+    timeout = get_valid_input("Timeout per port (seconds, 1-5): ", min_val=1, max_val=5)
+    
+    # Scan
+    print(f"\nScanning {target} (ports {start_port}-{end_port})...")
     open_ports = []
-    print(f"\nScanning {target} from port {start_port} to {end_port}...")
     
     for port in range(start_port, end_port + 1):
-        try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.settimeout(1)
-                result = s.connect_ex((target, port))
-                if result == 0:
-                    print(f"✅ Port {port}: OPEN")
-                    open_ports.append(port)
-                else:
-                    print(f"❌ Port {port}: Closed")
-        except Exception as e:
-            print(f"⚠️ Port {port}: Error ({str(e)})")
+        if scan_port(target, port, timeout):
+            print(f"✅ Port {port}: OPEN")
+            open_ports.append(port)
+        else:
+            print(f"❌ Port {port}: Closed", end='\r')  # Overwrite line
     
-    return open_ports
-
-def save_results(target, open_ports):
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    filename = f"scan_results_{target}_{timestamp}.txt"
-    
-    with open(filename, "w") as f:
-        f.write(f"Port Scan Results ({timestamp})\n")
-        f.write("="*30 + "\n")
-        f.write(f"Target: {target}\n")
-        f.write(f"Open Ports: {', '.join(map(str, open_ports))}\n")
-    
-    print(f"\nResults saved to '{filename}'")
+    # Results
+    print("\n\n=== RESULTS ===")
+    print(f"Open ports on {target}: {open_ports or 'None'}")
+    print(f"Scan completed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
 if __name__ == "__main__":
-    print("=== Python Port Scanner ===")
-    target = input("Enter target IP: ").strip()
-    
-    if not is_valid_ip(target):
-        print("Error: Invalid IP address format!")
-        exit()
-
-    while True:
-        port_input = input("Enter port or range (e.g. 80 or 79-81): ").strip()
-        try:
-            if '-' in port_input:
-                start_port, end_port = map(int, port_input.split('-'))
-            else:
-                start_port = end_port = int(port_input)
-            
-            if 0 <= start_port <= end_port <= 65535:
-                break
-            print("Error: Ports must be 0-65535 and start <= end")
-        except ValueError:
-            print("Error: Invalid port format. Use numbers like '80' or '79-81'")
-
-    open_ports = port_scan(target, start_port, end_port)
-    save_results(target, open_ports)
+    main()
