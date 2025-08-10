@@ -63,7 +63,7 @@ def get_target_ip():
         target_ip = input("Enter the IP address to scan: ").strip()
         
         if target_ip.lower() == 'localhost':
-            target_ip = '127.0.0.1'
+            target_ip = ''
             print(f"Using localhost: {target_ip}")
             return target_ip
         
