@@ -11,4 +11,4 @@ def password_strength(password):
     feedback = "Weak" if score < 3 else "Medium" if score < 5 else "Strong"
     return f"Score: {score}/5 - {feedback}"
 
-print(password_strength("cTre#121DEt"))
+print(password_strength("Azkat1246@"))
